@@ -23,12 +23,13 @@ let game = new Phaser.Game(config);
 function preload() {
     this.load.text('unicorn', 'assets/unicorn.txt');  // ASCII unicorn
     this.load.text('pipe', 'assets/pipe.txt');        // ASCII pipe, could be a simple '|'
+    this.load.image('flare0', 'assets/flare0.png');
 }
 
 function create() {
     // Setup the ASCII art unicorn
     let unicornArt = this.cache.text.get('unicorn');
-    this.unicorn = this.add.text(100, this.sys.game.config.height / 2, unicornArt, {
+    this.unicorn = this.add.text(200, this.sys.game.config.height / 2, unicornArt, {
         font: '16px monospace',
         fill: '#ffffff'
     });
@@ -39,10 +40,42 @@ function create() {
     // Unicorn flap input
     this.input.on('pointerdown', () => this.unicorn.body.setVelocityY(-400), this);
 
+
+
+  // Setup for the rainbow particles
+  let flareArt =  this.textures.get('flare0');
+  const emitter = this.add.particles(-10,50, flareArt, {
+    // frame: 'red',
+    angle: { min: 180 , max:360   },
+    speed: 200,
+    scale: { start: 0.1, end: 0.3 },
+     blendMode: 'ADD',
+    gravityX: -2000,
+    gravityY: 500,
+  });
+
+  emitter.startFollow(this.unicorn);  
+
+
+  // Initialize score and score text
+  this.score = 0;
+  this.scoreText = this.add.text(16, 16, 'Score: 0', { fontSize: '32px', fill: '#ffffff' });
+
+  // Start a timer event to update the score every second
+  this.time.addEvent({
+      delay: 1000,  // Update score every second
+      callback: () => {
+          this.score += 1;  // Increment score
+          this.scoreText.setText('Score: ' + this.score);  // Update displayed score
+      },
+      callbackScope: this,
+      loop: true
+  });
+  
     // Pipe creation with random placement and spacing
     this.pipes = this.add.group({ classType: Phaser.GameObjects.Text });
     this.time.addEvent({
-        delay: 2500,  // Adjust timing for better game flow
+        delay: 1500,  // Adjust timing for better game flow
         callback: createPipes,
         callbackScope: this,
         loop: true
@@ -83,15 +116,26 @@ function createPipes() {
 // General setup for pipes to avoid redundancy
 function setupPipe(that, pipe) {
     that.physics.world.enable(pipe);
-    pipe.body.setVelocityX(-200);
+    pipe.body.setVelocityX(-1000);
     pipe.body.immovable = true;
     pipe.body.allowGravity = false;
 }
 
+function restartGame() {
+    this.registry.destroy(); // Optional: destroy registry
+    this.events.off(); // Turn off all active events
+
+    this.score = 0; // Reset score
+    this.scoreText.setText('Score: ' + this.score); // Update score display
+
+    this.scene.restart(); // Restart current scene
+}
+
+
 function update() {
-    if (this.unicorn.y > 600 || this.unicorn.y < 0) {
-        this.scene.restart();  // Restart the game if the unicorn goes out of bounds
-    }
+  if (this.unicorn.y > 600 || this.unicorn.y < 0) {
+      this.restartGame();  // Call restart game function if the unicorn goes out of bounds
+  }
 }
 
 function restartGame() {
