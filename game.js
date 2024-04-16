@@ -42,19 +42,7 @@ function create() {
 
 
 
-  // Setup for the rainbow particles
-  let flareArt =  this.textures.get('flare0');
-  const emitter = this.add.particles(-10,50, flareArt, {
-    // frame: 'red',
-    angle: { min: 180 , max:360   },
-    speed: 200,
-    scale: { start: 0.1, end: 0.3 },
-     blendMode: 'ADD',
-    gravityX: -2000,
-    gravityY: 500,
-  });
 
-  emitter.startFollow(this.unicorn);  
 
 
   // Initialize score and score text
@@ -71,6 +59,22 @@ function create() {
       callbackScope: this,
       loop: true
   });
+
+
+  // Initialize pipe speed and increase interval
+  this.pipeSpeed = -1000;  // Base speed of pipes moving left
+  this.speedIncreaseInterval = 555;  // Increase speed 
+
+  // Timer to increase pipe speed
+  this.time.addEvent({
+      delay: this.speedIncreaseInterval,
+      callback: () => {
+          this.pipeSpeed -= 50;  // Make the pipe speed faster (more negative)
+          console.log('New pipe speed:', this.pipeSpeed);
+      },
+      callbackScope: this,
+      loop: true
+  });
   
     // Pipe creation with random placement and spacing
     this.pipes = this.add.group({ classType: Phaser.GameObjects.Text });
@@ -80,6 +84,20 @@ function create() {
         callbackScope: this,
         loop: true
     });
+
+  // Setup for the rainbow particles
+  let flareArt =  this.textures.get('flare0');
+  this.emitter = this.add.particles(-10,50, flareArt, {
+    // frame: 'red',
+    angle: { min: 180 , max:360   },
+    speed: 200,
+    scale: { start: 0.1, end: 0.3 },
+     blendMode: 'ADD',
+    gravityX: -3000,
+    gravityY: 500,
+  });
+
+  this.emitter.startFollow(this.unicorn);  
 
     // Collision detection
     this.physics.add.collider(this.unicorn, this.pipes, () => this.scene.restart(), null, this);
@@ -116,12 +134,13 @@ function createPipes() {
 // General setup for pipes to avoid redundancy
 function setupPipe(that, pipe) {
     that.physics.world.enable(pipe);
-    pipe.body.setVelocityX(-1000);
+    pipe.body.setVelocityX(that.pipeSpeed);
     pipe.body.immovable = true;
     pipe.body.allowGravity = false;
 }
 
-function restartGame() {
+function update() {
+  if (this.unicorn.y > 600 || this.unicorn.y < 0) {
     this.registry.destroy(); // Optional: destroy registry
     this.events.off(); // Turn off all active events
 
@@ -129,12 +148,6 @@ function restartGame() {
     this.scoreText.setText('Score: ' + this.score); // Update score display
 
     this.scene.restart(); // Restart current scene
-}
-
-
-function update() {
-  if (this.unicorn.y > 600 || this.unicorn.y < 0) {
-      this.restartGame();  // Call restart game function if the unicorn goes out of bounds
   }
 }
 
